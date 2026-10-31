@@ -50,12 +50,17 @@ namespace SchoolApp.Controllers
         }
 
         // POST: Students/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("StudentId,StudentNo,Name,Email,ConfirmEmail,Phone,Age,BirthDate")] Student student)
         {
+            // Is there already a student with this email?
+            if (await _context.Student.AnyAsync(s => s.Email == student.Email))
+            {
+                // Put an error on Email; the student is not saved
+                ModelState.AddModelError("Email", "This email is already registered.");
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(student);
@@ -82,8 +87,6 @@ namespace SchoolApp.Controllers
         }
 
         // POST: Students/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("StudentId,StudentNo,Name,Email,ConfirmEmail,Phone,Age,BirthDate")] Student student)
@@ -91,6 +94,12 @@ namespace SchoolApp.Controllers
             if (id != student.StudentId)
             {
                 return NotFound();
+            }
+
+            // Same check, but skip the student being edited
+            if (await _context.Student.AnyAsync(s => s.Email == student.Email && s.StudentId != student.StudentId))
+            {
+                ModelState.AddModelError("Email", "This email is already registered.");
             }
 
             if (ModelState.IsValid)
